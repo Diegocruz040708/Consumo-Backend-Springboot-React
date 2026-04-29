@@ -8,16 +8,16 @@ import MateriasPage from './features/materias/pages/MateriasPage'
 function App() {
   return (
     <Router>
-      <div className="flex flex-col w-full h-full">
+      <div className="flex flex-col w-full min-h-screen">
         <NavbarComponent />
-        <div className="flex-1 w-full overflow-auto bg-[#f5efe7]">
+        <main className="flex-1 w-full overflow-auto bg-[#f5efe7]">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/alumnos" element={<AlumnosPage />} />
             <Route path="/docentes" element={<DocentesPage />} />
             <Route path="/materias" element={<MateriasPage />} />
           </Routes>
-        </div>
+        </main>
       </div>
     </Router>
   )

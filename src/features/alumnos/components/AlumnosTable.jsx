@@ -5,16 +5,16 @@ export default function AlumnosTable({ alumnos = [], onEdit, onDelete }) {
   return (
     <div className="overflow-x-auto rounded-lg shadow-md">
       <table className="min-w-full divide-y divide-gray-200 bg-white">
-        <thead className="bg-[#213555] text-white">
+        <thead className="bg-[#213555] text-white hidden sm:table-header-group">
           <tr>
-            <th className="px-4 py-2 text-left">Imagen</th>
-            <th className="px-4 py-2 text-left">Nombre</th>
-            <th className="px-4 py-2 text-left">Apellido</th>
-            <th className="px-4 py-2 text-left">Email</th>
-            <th className="px-4 py-2 text-left">Número de Control</th>
-            <th className="px-4 py-2 text-left">Teléfono</th>
-            <th className="px-4 py-2 text-left">Carrera</th>
-            <th className="px-4 py-2 text-left">Acciones</th>
+            <th className="px-3 py-2 text-left text-sm">Imagen</th>
+            <th className="px-3 py-2 text-left text-sm">Nombre</th>
+            <th className="px-3 py-2 text-left text-sm">Apellido</th>
+            <th className="px-3 py-2 text-left text-sm">Email</th>
+            <th className="px-3 py-2 text-left text-sm">No. Control</th>
+            <th className="px-3 py-2 text-left text-sm">Teléfono</th>
+            <th className="px-3 py-2 text-left text-sm">Carrera</th>
+            <th className="px-3 py-2 text-left text-sm">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -26,21 +26,41 @@ export default function AlumnosTable({ alumnos = [], onEdit, onDelete }) {
             </tr>
           ) : (
             alumnos.map((a) => (
-              <tr key={a.id} className="hover:bg-[#f3f7fb]">
-                <td className="px-4 py-3">
+              <tr key={a.id} className="hover:bg-[#f3f7fb] flex flex-col sm:table-row">
+                <td className="px-3 py-3 sm:py-2 block sm:table-cell sm:text-left">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Imagen</span>
                   <img
                     src={a.imagen || 'https://via.placeholder.com/48'}
                     alt={`${a.nombre} ${a.apellido}`}
-                    className="w-12 h-12 object-cover rounded-full border"
+                    className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-full border"
                   />
                 </td>
-                <td className="px-4 py-3">{a.nombre}</td>
-                <td className="px-4 py-3">{a.apellido}</td>
-                <td className="px-4 py-3">{a.email}</td>
-                <td className="px-4 py-3">{a.numeroControl}</td>
-                <td className="px-4 py-3">{a.telefono}</td>
-                <td className="px-4 py-3">{a.carrera}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Nombre</span>
+                  {a.nombre}
+                </td>
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Apellido</span>
+                  {a.apellido}
+                </td>
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Email</span>
+                  {a.email}
+                </td>
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">No. Control</span>
+                  {a.numeroControl}
+                </td>
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Teléfono</span>
+                  {a.telefono}
+                </td>
+                <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Carrera</span>
+                  {a.carrera}
+                </td>
+                <td className="px-3 py-2 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Acciones</span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => onEdit && onEdit(a)}
