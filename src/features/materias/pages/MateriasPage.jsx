@@ -1,11 +1,115 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Plus } from 'lucide-react'
+import MateriasList from '../components/MateriasList'
+import MateriaModal from '../components/MateriaModal'
+import ConfirmDialog from '../../alumnos/components/ConfirmDialog'
+import Notifications from '../../alumnos/components/Notifications'
+
 export default function MateriasPage() {
+  const [materias, setMaterias] = useState([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const pageSize = 6
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [candidateDelete, setCandidateDelete] = useState(null)
+  const [notifications, setNotifications] = useState([])
+
+  function openAdd() {
+    setEditing(null)
+    setIsOpen(true)
+  }
+
+  function openEdit(materia) {
+    setEditing(materia)
+    setIsOpen(true)
+  }
+
+  function closeModal() {
+    setIsOpen(false)
+    setEditing(null)
+  }
+
+  function addNotification(message, type = 'info') {
+    const id = Date.now() + Math.random()
+    setNotifications((s) => [...s, { id, message, type }])
+  }
+
+  function removeNotification(id) {
+    setNotifications((s) => s.filter((n) => n.id !== id))
+  }
+
+  function handleSave(data) {
+    if (editing) {
+      setMaterias((prev) => prev.map((m) => (m.id === editing.id ? { ...m, ...data } : m)))
+      addNotification('Materia actualizada correctamente', 'success')
+    } else {
+      setMaterias((prev) => [...prev, { id: Date.now(), ...data }])
+      addNotification('Materia agregada correctamente', 'success')
+    }
+    closeModal()
+  }
+
+  function requestDelete(id) {
+    setCandidateDelete(id)
+    setConfirmOpen(true)
+  }
+
+  function confirmDelete() {
+    if (candidateDelete) {
+      setMaterias((prev) => prev.filter((m) => m.id !== candidateDelete))
+      addNotification('Materia eliminada correctamente', 'danger')
+    }
+    setCandidateDelete(null)
+    setConfirmOpen(false)
+  }
+
+  // search + pagination
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return materias
+    return materias.filter((m) => (m.nombre || '').toLowerCase().includes(term))
+  }, [materias, search])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  useEffect(() => { if (page > totalPages) setPage(1) }, [totalPages])
+  const current = filtered.slice((page - 1) * pageSize, page * pageSize)
+
   return (
-    <div className="w-full min-h-full bg-[#f5efe7] py-6 sm:py-12 px-4 sm:px-6">
-      <div className="w-full max-w-6xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#213555] mb-4">Vista Materias</h1>
+    <div className="w-full min-h-full bg-[#f5efe7] py-10 px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-4xl font-bold" style={{ color: '#213555' }}>Materias</h1>
+          <div className="flex items-center gap-3">
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} placeholder="Buscar por nombre" className="px-3 py-2 rounded border" />
+            <button onClick={openAdd} className="inline-flex items-center gap-2 px-4 py-2 rounded-md shadow-sm" style={{ backgroundColor: '#4f709c', color: '#fff' }}>
+              <Plus size={18} /> Agregar
+            </button>
+          </div>
         </div>
+
+        <MateriasList materias={current} onEdit={openEdit} onDelete={requestDelete} />
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-600">Mostrando {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length}</div>
+          <div className="flex items-center gap-2">
+            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-3 py-1 rounded border" style={{ borderColor: '#d8c4b4' }}>Anterior</button>
+            {[...Array(totalPages)].map((_, i) => (
+              <button key={i} onClick={() => setPage(i + 1)} className={`px-3 py-1 rounded ${page === i + 1 ? 'font-bold' : ''}`} style={{ backgroundColor: page === i + 1 ? '#4f709c' : undefined, color: page === i + 1 ? '#fff' : '#213555' }}>{i + 1}</button>
+            ))}
+            <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="px-3 py-1 rounded border" style={{ borderColor: '#d8c4b4' }}>Siguiente</button>
+          </div>
+        </div>
+
+        <MateriaModal isOpen={isOpen} onClose={closeModal} onSave={handleSave} initialData={editing} />
+
+        <ConfirmDialog isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={confirmDelete} title="Eliminar materia" description="¿Seguro que quieres eliminar esta materia? Esta acción no se puede deshacer." />
+
+        <Notifications notifications={notifications} remove={removeNotification} />
       </div>
     </div>
   )
+
+  function removeNotification(id) { setNotifications((s) => s.filter((n) => n.id !== id)) }
 }
