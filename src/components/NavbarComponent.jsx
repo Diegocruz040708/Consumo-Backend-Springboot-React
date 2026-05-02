@@ -18,7 +18,7 @@ export default function NavbarComponent() {
   return (
       <nav className="bg-[#213555] pl-0 pr-4 sm:pr-6 py-3 sm:py-4 shadow-lg sticky top-0 z-50 w-full">
       <div className="w-full max-w-7xl mx-auto flex items-center justify-between">
-         <Link to="/" className="flex items-center -ml-20">
+         <Link to="/dashboard" className="flex items-center -ml-20">
            <GraduationCap className="text-[#F5EFE7] hover:text-[#d8c4b4] transition-colors w-8 h-8 sm:w-10 sm:h-10" />
          </Link>
 

@@ -12,6 +12,7 @@ export default function AlumnosTable({ alumnos = [], onEdit, onDelete }) {
             <th className="px-3 py-2 text-left text-sm">Apellido</th>
             <th className="px-3 py-2 text-left text-sm">Email</th>
             <th className="px-3 py-2 text-left text-sm">No. Control</th>
+             <th className="px-3 py-2 text-left text-sm">Semestre</th>
             <th className="px-3 py-2 text-left text-sm">Teléfono</th>
             <th className="px-3 py-2 text-left text-sm">Carrera</th>
             <th className="px-3 py-2 text-left text-sm">Acciones</th>
@@ -29,11 +30,11 @@ export default function AlumnosTable({ alumnos = [], onEdit, onDelete }) {
               <tr key={a.id} className="hover:bg-[#f3f7fb] flex flex-col sm:table-row">
                 <td className="px-3 py-3 sm:py-2 block sm:table-cell sm:text-left">
                   <span className="sm:hidden font-bold text-xs text-gray-500">Imagen</span>
-                  <img
-                    src={a.imagen || 'https://via.placeholder.com/48'}
-                    alt={`${a.nombre} ${a.apellido}`}
-                    className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-full border"
-                  />
+                    <img
+                      src={a.imagenURL || a.imagen || 'https://via.placeholder.com/48'}
+                      alt={`${a.nombre} ${a.apellido}`}
+                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-full border"
+                    />
                 </td>
                 <td className="px-3 py-1 sm:py-2 block sm:table-cell">
                   <span className="sm:hidden font-bold text-xs text-gray-500">Nombre</span>
@@ -50,6 +51,10 @@ export default function AlumnosTable({ alumnos = [], onEdit, onDelete }) {
                 <td className="px-3 py-1 sm:py-2 block sm:table-cell">
                   <span className="sm:hidden font-bold text-xs text-gray-500">No. Control</span>
                   {a.numeroControl}
+                </td>
+                 <td className="px-3 py-1 sm:py-2 block sm:table-cell">
+                  <span className="sm:hidden font-bold text-xs text-gray-500">Semestre</span>
+                  {a.semestre ? a.semestre.nombre : 'N/A'}
                 </td>
                 <td className="px-3 py-1 sm:py-2 block sm:table-cell">
                   <span className="sm:hidden font-bold text-xs text-gray-500">Teléfono</span>
