@@ -136,7 +136,7 @@ export default function MateriasPage() {
           </div>
         </div>
 
-        <MateriaModal isOpen={isOpen} onClose={closeModal} onSave={handleSave} initialData={editing} />
+        <MateriaModal isOpen={isOpen} onClose={closeModal} onSave={handleSave} initialData={editing} existingMaterias={materias} />
 
         <ConfirmDialog isOpen={confirmOpen} onClose={() => setConfirmOpen(false)} onConfirm={confirmDelete} title="Eliminar materia" description="¿Seguro que quieres eliminar esta materia? Esta acción no se puede deshacer." />
 
