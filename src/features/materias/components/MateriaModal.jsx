@@ -1,17 +1,38 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { X, Book, Hash, Calendar } from 'lucide-react'
-
-const semestres = [
-  'Primero','Segundo','Tercero','Cuarto','Quinto','Sexto','Séptimo','Octavo','Noveno','Décimo'
-]
+import api from '../../../services/api'
+import { createMateria, updateMateria } from '../../../services/materiaService'
 
 export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
-  const empty = { nombre: '', creditos: 1, semestre: '' }
+  const empty = { nombre: '', creditos: 1, semestreId: '' }
   const [form, setForm] = useState(empty)
+  const [semestres, setSemestres] = useState([])
+  const [saving, setSaving] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
   useEffect(() => {
-    if (isOpen) setForm(initialData || empty)
+    if (!isOpen) return
+    // cargar semestres desde backend
+    ;(async () => {
+      try {
+        const res = await api.get('/semestres/traer-semestres')
+        setSemestres(res.data || [])
+      } catch (e) {
+        console.error('Error al obtener semestres', e)
+        setSemestres([])
+      }
+    })()
+
+    if (initialData) {
+      setForm({
+        nombre: initialData.nombre || '',
+        creditos: initialData.creditos || 1,
+        semestreId: initialData.semestre ? String(initialData.semestre.id) : ''
+      })
+    } else {
+      setForm(empty)
+    }
   }, [isOpen, initialData])
 
   function handleChange(e) {
@@ -24,19 +45,39 @@ export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
     setForm((s) => ({ ...s, [name]: value }))
   }
 
-  function handleSubmit(e) {
-    e.preventDefault()
-    if (!form.nombre.trim()) return
-    if (!form.semestre) return
-    if (!form.creditos || form.creditos < 1) return
-    onSave && onSave(form)
+  function handleClose() {
     setForm(empty)
     onClose()
   }
 
-  function handleClose() {
-    setForm(empty)
-    onClose()
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.nombre.trim()) return
+    if (!form.semestreId) return
+    if (!form.creditos || form.creditos < 1) return
+
+    setSaving(true)
+    setSubmitError(null)
+    const payload = {
+      nombre: form.nombre,
+      creditos: form.creditos,
+      semestre: { id: Number(form.semestreId) }
+    }
+    try {
+      let saved
+      if (initialData && initialData.id) {
+        saved = await updateMateria(initialData.id, payload)
+      } else {
+        saved = await createMateria(payload)
+      }
+      onSave && onSave(saved)
+      handleClose()
+    } catch (err) {
+      console.error(err)
+      setSubmitError('Error al guardar materia')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -81,10 +122,10 @@ export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
                       <span className="text-sm font-medium text-gray-700">Semestre</span>
                       <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2 bg-white">
                         <Calendar size={18} className="text-[#4f709c]" />
-                        <select name="semestre" required value={form.semestre} onChange={handleChange} className="w-full outline-none bg-transparent h-full cursor-pointer">
+                        <select name="semestreId" required value={form.semestreId} onChange={handleChange} className="w-full outline-none bg-transparent h-full cursor-pointer">
                           <option value="">Seleccione semestre</option>
-                          {semestres.map((s, i) => (
-                            <option key={s} value={s}>{s}</option>
+                          {semestres.map((s) => (
+                            <option key={s.id} value={s.id}>{s.nombre}</option>
                           ))}
                         </select>
                       </div>
@@ -95,11 +136,12 @@ export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
                     <button type="button" onClick={handleClose} className="px-4 py-2 rounded border font-semibold" style={{ borderColor: '#d8c4b4', color: '#213555' }}>
                       Cancelar
                     </button>
-                    <button type="submit" className="px-4 py-2 rounded font-semibold" style={{ backgroundColor: '#213555', color: '#d8c4b4' }}>
-                      Guardar
+                    <button type="submit" disabled={saving} className="px-4 py-2 rounded font-semibold" style={{ backgroundColor: '#213555', color: '#d8c4b4' }}>
+                      {saving ? 'Guardando...' : 'Guardar'}
                     </button>
                   </div>
                 </form>
+                {submitError && <div className="mt-2 text-sm text-red-600">{submitError}</div>}
               </Dialog.Panel>
             </Transition.Child>
           </div>

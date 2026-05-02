@@ -4,6 +4,7 @@ import MateriasList from '../components/MateriasList'
 import MateriaModal from '../components/MateriaModal'
 import ConfirmDialog from '../../alumnos/components/ConfirmDialog'
 import Notifications from '../../alumnos/components/Notifications'
+import { getMaterias, deleteMateria } from '../../../services/materiaService'
 
 export default function MateriasPage() {
   const [materias, setMaterias] = useState([])
@@ -15,6 +16,8 @@ export default function MateriasPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [candidateDelete, setCandidateDelete] = useState(null)
   const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   function openAdd() {
     setEditing(null)
@@ -41,13 +44,9 @@ export default function MateriasPage() {
   }
 
   function handleSave(data) {
-    if (editing) {
-      setMaterias((prev) => prev.map((m) => (m.id === editing.id ? { ...m, ...data } : m)))
-      addNotification('Materia actualizada correctamente', 'success')
-    } else {
-      setMaterias((prev) => [...prev, { id: Date.now(), ...data }])
-      addNotification('Materia agregada correctamente', 'success')
-    }
+    // El modal realiza la petición; aquí refrescamos la lista completa
+    fetchMaterias()
+    addNotification('Operación realizada correctamente', 'success')
     closeModal()
   }
 
@@ -58,11 +57,24 @@ export default function MateriasPage() {
 
   function confirmDelete() {
     if (candidateDelete) {
-      setMaterias((prev) => prev.filter((m) => m.id !== candidateDelete))
-      addNotification('Materia eliminada correctamente', 'danger')
+      ;(async () => {
+        try {
+          setLoading(true)
+          await deleteMateria(candidateDelete)
+          addNotification('Materia eliminada correctamente', 'danger')
+          await fetchMaterias()
+        } catch (e) {
+          console.error(e)
+          addNotification('Error al eliminar materia', 'danger')
+        } finally {
+          setLoading(false)
+          setCandidateDelete(null)
+          setConfirmOpen(false)
+        }
+      })()
+    } else {
+      setConfirmOpen(false)
     }
-    setCandidateDelete(null)
-    setConfirmOpen(false)
   }
 
   // search + pagination
@@ -75,6 +87,26 @@ export default function MateriasPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   useEffect(() => { if (page > totalPages) setPage(1) }, [totalPages])
   const current = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+  async function fetchMaterias() {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getMaterias()
+      setMaterias(data)
+    } catch (e) {
+      console.error(e)
+      setError('Error al obtener materias')
+      addNotification('Error al cargar materias', 'danger')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchMaterias()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="w-full min-h-full bg-[#f5efe7] py-10 px-6">
@@ -90,6 +122,8 @@ export default function MateriasPage() {
         </div>
 
         <MateriasList materias={current} onEdit={openEdit} onDelete={requestDelete} />
+        {loading && <div className="text-center text-sm text-gray-600 mt-3">Cargando...</div>}
+        {error && <div className="text-center text-sm text-red-600 mt-3">{error}</div>}
 
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-gray-600">Mostrando {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length}</div>
@@ -111,5 +145,4 @@ export default function MateriasPage() {
     </div>
   )
 
-  function removeNotification(id) { setNotifications((s) => s.filter((n) => n.id !== id)) }
 }

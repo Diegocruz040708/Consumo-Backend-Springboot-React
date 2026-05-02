@@ -1,12 +1,25 @@
 import { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
-import { X, User, Mail, Hash, Phone, Book, Image } from 'lucide-react'
+import { X, User, Mail, Hash, Phone, Book, Image, Layers } from 'lucide-react'
+import { createAlumno, updateAlumno } from '../../../services/alumnoService'
 
-export default function AlumnoModal({ isOpen, onClose, onSave, initialData }) {
-  const empty = { nombre: '', apellido: '', email: '', numeroControl: '', telefono: '', carrera: '', imagen: '' }
+export default function AlumnoModal({ isOpen, onClose, onSave, initialData, semestres }) {
+
+  const empty = { 
+    nombre: '', 
+    apellido: '', 
+    email: '', 
+    numeroControl: '', 
+    telefono: '', 
+    carrera: '', 
+    imagen: '',
+    semestreId: ''
+  }
+
   const [form, setForm] = useState(empty)
+  const [saving, setSaving] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
-  // Opciones de carreras
   const carrerasDisponibles = [
     "Ingeniería en Sistemas",
     "Ingeniería Industrial",
@@ -17,22 +30,33 @@ export default function AlumnoModal({ isOpen, onClose, onSave, initialData }) {
 
   useEffect(() => {
     if (isOpen) {
-      setForm(initialData || empty)
+      if (initialData) {
+        setForm({
+          nombre: initialData.nombre || '',
+          apellido: initialData.apellido || '',
+          email: initialData.email || '',
+          numeroControl: initialData.numeroControl || '',
+          telefono: initialData.telefono || '',
+          carrera: initialData.carrera || '',
+          imagen: initialData.imagenURL || '',
+          semestreId: initialData.semestre?.id || ''
+        })
+      } else {
+        setForm(empty)
+      }
     }
   }, [isOpen, initialData])
 
-  // Función para cerrar y limpiar
   const handleClose = () => {
-    setForm(empty) // Borra los datos
+    setForm(empty)
     onClose()
   }
 
   function handleChange(e) {
     const { name, value } = e.target
     
-    // Validación en tiempo real para teléfono (solo números y max 10)
     if (name === 'telefono') {
-      const val = value.replace(/\D/g, '') // Elimina lo que no sea número
+      const val = value.replace(/\D/g, '')
       if (val.length <= 10) setForm((s) => ({ ...s, [name]: val }))
       return
     }
@@ -43,13 +67,11 @@ export default function AlumnoModal({ isOpen, onClose, onSave, initialData }) {
   function handleSubmit(e) {
     e.preventDefault()
 
-    // Validación de Teléfono (Exactamente 10)
     if (form.telefono.length !== 10) {
       alert("El teléfono debe tener exactamente 10 dígitos.")
       return
     }
 
-    // Validación de Dominio de Correo
     const dominiosPermitidos = ["@tlaxiaco.tecnm.mx", "@gmail.com"]
     const esCorreoValido = dominiosPermitidos.some(dominio => 
       form.email.toLowerCase().endsWith(dominio)
@@ -60,108 +82,170 @@ export default function AlumnoModal({ isOpen, onClose, onSave, initialData }) {
       return
     }
 
-    onSave && onSave(form)
-    handleClose() // Borra datos y cierra al terminar
+    if (!form.semestreId) {
+      alert("Debes seleccionar un semestre")
+      return
+    }
+
+    ;(async () => {
+      setSaving(true)
+      setSubmitError(null)
+
+      const payload = {
+        nombre: form.nombre,
+        apellido: form.apellido,
+        email: form.email,
+        numeroControl: form.numeroControl,
+        telefono: form.telefono,
+        carrera: form.carrera,
+        imagenURL: form.imagen || null,
+        semestre: {
+          id: Number(form.semestreId)
+        }
+      }
+
+      try {
+        let saved
+        if (initialData && initialData.id) {
+          saved = await updateAlumno(initialData.id, payload)
+        } else {
+          saved = await createAlumno(payload)
+        }
+
+        onSave && onSave(saved)
+        handleClose()
+
+      } catch (err) {
+        console.error(err)
+        setSubmitError('Error al guardar alumno')
+      } finally {
+        setSaving(false)
+      }
+    })()
   }
+
+  // clases con sombreado interno
+  const inputClass = "w-full outline-none bg-transparent placeholder-gray-400"
+  const wrapperBase = "flex items-center gap-2 border rounded px-3 py-2 bg-4F709C transition-all duration-200"
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
+
+        <Transition.Child as={Fragment}>
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-              <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <div className="flex items-start justify-between">
-                  <Dialog.Title as="h3" className="text-lg font-bold" style={{ color: '#213555' }}>
-                    {initialData ? 'Editar Alumno' : 'Agregar Alumno'}
-                  </Dialog.Title>
-                  <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
-                    <X />
-                  </button>
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+
+          <Dialog.Panel className="w-full max-w-3xl bg-white p-6 rounded-2xl shadow-xl">
+
+            <div className="flex justify-between">
+              <h3 className="text-lg font-bold">
+                {initialData ? 'Editar Alumno' : 'Agregar Alumno'}
+              </h3>
+              <button onClick={handleClose}><X /></button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Nombre */}
+              <div>
+                <label className="text-sm text-gray-600">Nombre</label>
+                <div className={`${wrapperBase} ${form.nombre ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <User size={18}/>
+                  <input name="nombre" required value={form.nombre} onChange={handleChange} placeholder="Ej: Juan" className={inputClass}/>
                 </div>
+              </div>
 
-                <form onSubmit={handleSubmit} className="mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Campos de Nombre y Apellido igual... */}
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Nombre</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <User size={18} className="text-[#4f709c]" />
-                        <input name="nombre" required value={form.nombre} onChange={handleChange} className="w-full outline-none" placeholder="Nombre" />
-                      </div>
-                    </label>
+              {/* Apellido */}
+              <div>
+                <label className="text-sm text-gray-600">Apellido</label>
+                <div className={`${wrapperBase} ${form.apellido ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <User size={18}/>
+                  <input name="apellido" required value={form.apellido} onChange={handleChange} placeholder="Ej: Pérez" className={inputClass}/>
+                </div>
+              </div>
 
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Apellido</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <User size={18} className="text-[#4f709c]" />
-                        <input name="apellido" required value={form.apellido} onChange={handleChange} className="w-full outline-none" placeholder="Apellido" />
-                      </div>
-                    </label>
+              {/* Email */}
+              <div>
+                <label className="text-sm text-gray-600">Correo</label>
+                <div className={`${wrapperBase} ${form.email ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Mail size={18}/>
+                  <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="Ej: alumno@gmail.com" className={inputClass}/>
+                </div>
+              </div>
 
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Correo </span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <Mail size={18} className="text-[#4f709c]" />
-                        <input type="email" name="email" required value={form.email} onChange={handleChange} className="w-full outline-none" placeholder="usuario@gmail.com " />
-                      </div>
-                    </label>
+              {/* Número control */}
+              <div>
+                <label className="text-sm text-gray-600">Número de control</label>
+                <div className={`${wrapperBase} ${form.numeroControl ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Hash size={18}/>
+                  <input name="numeroControl" required value={form.numeroControl} onChange={handleChange} placeholder="Ej: 21161045" className={inputClass}/>
+                </div>
+              </div>
 
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Número de Control</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <Hash size={18} className="text-[#4f709c]" />
-                        <input name="numeroControl" required value={form.numeroControl} onChange={handleChange} className="w-full outline-none" placeholder="00000000" />
-                      </div>
-                    </label>
+              {/* Semestre */}
+              <div>
+                <label className="text-sm text-gray-600">Semestre</label>
+                <div className={`${wrapperBase} ${form.semestreId ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Layers size={18}/>
+                  <select name="semestreId" value={form.semestreId} onChange={handleChange} required className={inputClass}>
+                    <option value="">Selecciona un semestre</option>
+                    {semestres.map((s) => (
+                      <option key={s.id} value={s.id}>{s.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Teléfono (10 dígitos)</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <Phone size={18} className="text-[#4f709c]" />
-                        <input type="tel" name="telefono" required value={form.telefono} onChange={handleChange} className="w-full outline-none" placeholder="1234567890" />
-                      </div>
-                    </label>
+              {/* Teléfono */}
+              <div>
+                <label className="text-sm text-gray-600">Teléfono</label>
+                <div className={`${wrapperBase} ${form.telefono ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Phone size={18}/>
+                  <input type="tel" name="telefono" required value={form.telefono} onChange={handleChange} placeholder="Ej: 9531234567" className={inputClass}/>
+                </div>
+              </div>
 
-                    <label className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Carrera</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2 bg-white">
-                        <Book size={18} className="text-[#4f709c]" />
-                        <select name="carrera" required value={form.carrera} onChange={handleChange} className="w-full outline-none bg-transparent h-full cursor-pointer">
-                          <option value="">Seleccione una carrera</option>
-                          {carrerasDisponibles.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </label>
+              {/* Carrera */}
+              <div>
+                <label className="text-sm text-gray-600">Carrera</label>
+                <div className={`${wrapperBase} ${form.carrera ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Book size={18}/>
+                  <select name="carrera" required value={form.carrera} onChange={handleChange} className={inputClass}>
+                    <option value="">Selecciona una carrera</option>
+                    {carrerasDisponibles.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                    {/* Imagen URL igual... */}
-                    <label className="flex flex-col md:col-span-2">
-                      <span className="text-sm font-medium text-gray-700">Imagen URL</span>
-                      <div className="mt-1 flex items-center gap-2 border rounded px-3 py-2">
-                        <Image size={18} className="text-[#4f709c]" />
-                        <input name="imagen" value={form.imagen} onChange={handleChange} className="w-full outline-none" placeholder="https://..." />
-                      </div>
-                    </label>
-                  </div>
+              {/* Imagen */}
+              <div className="md:col-span-2">
+                <label className="text-sm text-gray-600">Imagen URL</label>
+                <div className={`${wrapperBase} ${form.imagen ? 'bg-gray-100' : ''} focus-within:bg-gray-100`}>
+                  <Image size={18}/>
+                  <input name="imagen" value={form.imagen} onChange={handleChange} placeholder="https://ejemplo.com/foto.jpg" className={inputClass}/>
+                </div>
+              </div>
 
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button type="button" onClick={handleClose} className="px-4 py-2 rounded border font-semibold" style={{ borderColor: '#d8c4b4', color: '#213555' }}>
-                      Cancelar
-                    </button>
-                    <button type="submit" className="px-4 py-2 rounded font-semibold transition-opacity hover:opacity-90" style={{ backgroundColor: '#213555', color: '#d8c4b4' }}>
-                      Guardar
-                    </button>
-                  </div>
-                </form>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+              {/* Botones */}
+              <div className="md:col-span-2 flex justify-end gap-2">
+                <button type="button" onClick={handleClose} className="border px-4 py-2 rounded">
+                  Cancelar
+                </button>
+                <button type="submit" className="bg-[#213555] text-white px-4 py-2 rounded">
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+
+            </form>
+
+            {submitError && <p className="text-red-500 mt-2">{submitError}</p>}
+
+          </Dialog.Panel>
         </div>
       </Dialog>
     </Transition>

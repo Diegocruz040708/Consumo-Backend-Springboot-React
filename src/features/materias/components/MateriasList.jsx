@@ -16,7 +16,7 @@ export default function MateriasList({ materias = [], onEdit, onDelete }) {
             </div>
             <div>
               <div className="text-lg font-semibold" style={{ color: '#213555' }}>{m.nombre}</div>
-              <div className="text-sm text-gray-600">Créditos: <span className="font-medium">{m.creditos}</span> • Semestre: <span className="font-medium">{m.semestre}</span></div>
+              <div className="text-sm text-gray-600">Créditos: <span className="font-medium">{m.creditos}</span> • Semestre: <span className="font-medium">{m.semestre ? (m.semestre.nombre || m.semestre) : '-'}</span></div>
             </div>
           </div>
 
