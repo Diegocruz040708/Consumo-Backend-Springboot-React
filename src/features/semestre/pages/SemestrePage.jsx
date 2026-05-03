@@ -47,12 +47,18 @@ export default function SemestrePage() {
     setLoading(true)
     setError(null)
     try {
-      if (editing && editing.id) {
-        await updateSemestre(editing.id, { nombre: form.nombre })
-        addNotification('Semestre actualizado correctamente', 'success')
+      const name = (form.nombre || '').trim().toLowerCase()
+      const exists = semestres.some((s) => (s.nombre || '').trim().toLowerCase() === name && (!editing || s.id !== editing.id))
+      if (exists) {
+        addNotification('Este semestre o materia ya se encuentra registrado', 'danger')
       } else {
-        await createSemestre({ nombre: form.nombre })
-        addNotification('Semestre agregado correctamente', 'success')
+        if (editing && editing.id) {
+          await updateSemestre(editing.id, { nombre: form.nombre })
+          addNotification('Semestre actualizado correctamente', 'success')
+        } else {
+          await createSemestre({ nombre: form.nombre })
+          addNotification('Semestre agregado correctamente', 'success')
+        }
       }
       await fetchSemestres()
       closeModal()

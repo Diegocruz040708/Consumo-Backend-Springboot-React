@@ -4,7 +4,7 @@ import { X, Book, Hash, Calendar } from 'lucide-react'
 import api from '../../../services/api'
 import { createMateria, updateMateria } from '../../../services/materiaService'
 
-export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
+export default function MateriaModal({ isOpen, onClose, onSave, initialData, existingMaterias = [] }) {
   const empty = { nombre: '', creditos: 1, semestreId: '' }
   const [form, setForm] = useState(empty)
   const [semestres, setSemestres] = useState([])
@@ -55,6 +55,14 @@ export default function MateriaModal({ isOpen, onClose, onSave, initialData }) {
     if (!form.nombre.trim()) return
     if (!form.semestreId) return
     if (!form.creditos || form.creditos < 1) return
+
+    // validate duplicates locally before submitting
+    const name = (form.nombre || '').trim().toLowerCase()
+    const duplicate = existingMaterias.some((m) => (m.nombre || '').trim().toLowerCase() === name && (!initialData || m.id !== initialData.id))
+    if (duplicate) {
+      setSubmitError('Esta materia ya se encuentra registrado')
+      return
+    }
 
     setSaving(true)
     setSubmitError(null)

@@ -4,11 +4,19 @@ export default function Notifications({ notifications = [], remove }) {
   useEffect(() => {
     notifications.forEach((n) => {
       if (!n._timeout) {
-        const t = setTimeout(() => remove(n.id), 1500)
+        const t = setTimeout(() => {
+          remove(n.id)
+          n._timeout = null
+        }, 1500)
         n._timeout = t
       }
     })
-    return () => notifications.forEach((n) => n._timeout && clearTimeout(n._timeout))
+    return () => notifications.forEach((n) => {
+      if (n._timeout) {
+        clearTimeout(n._timeout)
+        n._timeout = null
+      }
+    })
   }, [notifications, remove])
 
   return (

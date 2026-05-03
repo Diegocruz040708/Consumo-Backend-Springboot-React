@@ -172,14 +172,17 @@ export default function AlumnosPage() {
         {error && <div className="text-center text-red-600 mt-3">{error}</div>}
 
         {/* PAGINACIÓN */}
-        <div className="mt-4 flex justify-between">
-          <span>
-            {filtered.length} registros
-          </span>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-gray-600 order-2 sm:order-1">
+            Mostrando {filtered.length === 0 ? 0 : (page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)} de {filtered.length}
+          </div>
 
-          <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage(page - 1)}>Ant</button>
-            <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>Sig</button>
+          <div className="flex items-center gap-1 sm:gap-2 order-1 sm:order-2 flex-wrap justify-center">
+            <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="px-2 sm:px-3 py-1 rounded border text-sm sm:text-base" style={{ borderColor: '#d8c4b4' }}>Ant</button>
+            {[...Array(totalPages)].map((_, i) => (
+              <button key={i} onClick={() => setPage(i + 1)} className={`px-2 sm:px-3 py-1 rounded text-sm sm:text-base ${page === i + 1 ? 'font-bold' : ''}`} style={{ backgroundColor: page === i + 1 ? '#4f709c' : undefined, color: page === i + 1 ? '#fff' : '#213555' }}>{i + 1}</button>
+            ))}
+            <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="px-2 sm:px-3 py-1 rounded border text-sm sm:text-base" style={{ borderColor: '#d8c4b4' }}>Sig</button>
           </div>
         </div>
 
